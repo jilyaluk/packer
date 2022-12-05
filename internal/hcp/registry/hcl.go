@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	sdkpacker "github.com/hashicorp/packer-plugin-sdk/packer"
 	"github.com/hashicorp/packer/hcl2template"
+	"github.com/hashicorp/packer/packer"
 	"github.com/zclconf/go-cty/cty"
 	"github.com/zclconf/go-cty/cty/gocty"
 )
@@ -44,18 +45,22 @@ func (h *HCLMetadataRegistry) PopulateIteration(ctx context.Context) error {
 }
 
 // StartBuild is invoked when one build for the configuration is starting to be processed
-func (h *HCLMetadataRegistry) StartBuild(ctx context.Context, buildName string) error {
-	return h.bucket.startBuild(ctx, buildName)
+func (h *HCLMetadataRegistry) StartBuild(ctx context.Context, build sdkpacker.Build) error {
+	// Safe since all builds are created as CoreBuilds
+	cb := build.(*packer.CoreBuild)
+	return h.bucket.startBuild(ctx, cb.Type)
 }
 
 // CompleteBuild is invoked when one build for the configuration has finished
 func (h *HCLMetadataRegistry) CompleteBuild(
 	ctx context.Context,
-	buildName string,
+	build sdkpacker.Build,
 	artifacts []sdkpacker.Artifact,
 	buildErr error,
 ) ([]sdkpacker.Artifact, error) {
-	return h.bucket.completeBuild(ctx, buildName, artifacts, buildErr)
+	// Safe since all builds are created as CoreBuilds
+	cb := build.(*packer.CoreBuild)
+	return h.bucket.completeBuild(ctx, cb.Type, artifacts, buildErr)
 }
 
 func NewHCLMetadataRegistry(config *hcl2template.PackerConfig) (*HCLMetadataRegistry, hcl.Diagnostics) {
